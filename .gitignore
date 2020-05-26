@@ -1,0 +1,5 @@
+main
+*.o
+*.d
+*.png
+*.csv
