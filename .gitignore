@@ -3,6 +3,7 @@ main
 *.d
 *.png
 *.csv
+*.wav
 
 
 # Created by https://www.gitignore.io/api/clion
