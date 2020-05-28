@@ -1,11 +1,17 @@
 #include "Channel.h"
+
 #include <iostream>
 #include <exception>
 #include <fstream>
 #include <vector>
 #include <string>
+
 #include <getopt.h>
 #include <stdlib.h>
+
+#include <optional>
+#include <functional>
+
 
 using std::cout;
 using std::endl;
@@ -13,6 +19,7 @@ using std::string;
 using std::exception;
 using std::ofstream;
 using std::vector;
+using std::optional;
 
 
 void writeSamples(Channel channel) {
@@ -48,7 +55,7 @@ void writeNoteIndices(Channel channel) {
 
 		file.close();
 	} else {
-		cout << "Couldn't open file \"mote_indices.csv\"" << endl;
+		cout << "Couldn't open file \"note_indices.csv\"" << endl;
 	}
 }
 
@@ -71,36 +78,28 @@ static const struct option longOpts[] = {
 	{0, 0, 0, 0}
 };
 
-template<typename T>
-struct arg_t {
-	T value;
-	bool setted = false;
-};
-
 int main(int argc, char *argv[])
 {
+
 	if (argc > 1) {
 		int opt;
 		int optionIndex = 0;
 
-		arg_t<string> filename;
-		arg_t<double> minimalNoteSpacing;
-		arg_t<double> volumeThreshold;
+		optional<string> filename;
+		optional<double> minimalNoteSpacing;
+		optional<double> volumeThreshold;
 		bool usePercents = false;
 
 		while ((opt = getopt_long(argc, argv, optString, longOpts, &optionIndex)) != -1) {
 			switch (opt) {
 				case 'f':
-					filename.value = optarg;
-					filename.setted = true;
+					filename = optarg;
 					break;
 				case 'm':
-					minimalNoteSpacing.value = atof(optarg);
-					minimalNoteSpacing.setted = true;
+					minimalNoteSpacing = atof(optarg);
 					break;
 				case 'v':
-					volumeThreshold.value = atof(optarg);
-					volumeThreshold.setted = true;
+					volumeThreshold = atof(optarg);
 					break;
 				case 'p':
 					usePercents = true;
@@ -111,25 +110,32 @@ int main(int argc, char *argv[])
 			}
 		}
 
+
 		// checks
 
-		if (!filename.setted) {
+		if (!filename) {
 			cout << "You must specify filename. (option -f, --file)" << endl;
 			return 1;
 		}
 
-		if (!minimalNoteSpacing.setted) {
+		if (!minimalNoteSpacing) {
 			cout << "You must specify minimal spacing between notes in seconds. (option -m, --min-note-spacing)" << endl;
 			return 1;
 		}
 
-		if (!volumeThreshold.setted) {
+		if (!volumeThreshold) {
 			cout << "You must specify volume threshold for note detection. (option -v, -volume-threshold)" << endl;
 			return 1;
 		}
 
 		try {
-			Channel channel(filename.value, minimalNoteSpacing.value, volumeThreshold.value, usePercents);
+			Channel channel(
+					filename.value(),
+					minimalNoteSpacing.value(),
+					volumeThreshold.value(),
+					usePercents
+			);
+			// Channel channel(filename, minimalNoteSpacing, volumeThreshold, usePercents);
 			writeSamples(channel);
 			writeNoteIndices(channel);
 		} catch (exception& ex) {
